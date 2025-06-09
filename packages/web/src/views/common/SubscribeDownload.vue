@@ -121,15 +121,58 @@
         </v-col>
       </v-row>
       <v-divider class="my-2"></v-divider>
+      <v-row class="py-2" dense>
+        <v-col cols="auto">
+          <v-checkbox-btn :model-value="allSelected" @click="toggleSelectAll()"></v-checkbox-btn>
+        </v-col>
+        <v-col class="d-flex align-center">
+          <span class="text-body-2">
+            {{ selectedIds.length > 0 ? t('download.selected', { count: selectedIds.length }) : t('app.input.unselected') }}
+          </span>
+        </v-col>
+        <v-spacer></v-spacer>
+        <v-col cols="auto" v-if="selectedIds.length > 0">
+          <v-btn
+            class="mr-2"
+            variant="flat"
+            color="warning"
+            :prepend-icon="mdiPause"
+            :loading="batchPausing"
+            @click="pauseSelected()"
+          >
+            {{ t('app.actions.pause') }}
+          </v-btn>
+          <v-btn
+            class="mr-2"
+            variant="flat"
+            color="success"
+            :prepend-icon="mdiPlay"
+            :loading="batchUnpausing"
+            @click="unpauseSelected()"
+          >
+            {{ t('app.actions.unpause') }}
+          </v-btn>
+          <v-btn
+            variant="flat"
+            color="error"
+            :prepend-icon="mdiClose"
+            :loading="batchCanceling"
+            @click="cancelSelected()"
+          >
+            {{ t('app.actions.cancel') }}
+          </v-btn>
+        </v-col>
+      </v-row>
       <multi-items-loader class="px-0 py-3 mt-2" :loader="downloadsLoader" auto>
-        <download-item-overview
-          class="mb-3"
-          v-for="item in downloads"
-          :key="item.id"
-          :item="item"
-          @updated="onItemUpdated"
-          @deleted="onItemDeleted"
-        ></download-item-overview>
+        <div class="d-flex align-start mb-3" v-for="item in downloads" :key="item.id">
+          <v-checkbox-btn class="mr-2" color="primary" v-model="selectedIds" :value="item.id"></v-checkbox-btn>
+          <download-item-overview
+            class="flex-grow-1"
+            :item="item"
+            @updated="onItemUpdated"
+            @deleted="onItemDeleted"
+          ></download-item-overview>
+        </div>
       </multi-items-loader>
     </v-container>
   </component>
@@ -141,10 +184,10 @@ import { useApiStore } from '@/store/api';
 import { useRoute } from 'vue-router';
 import { useAxiosPageLoader } from '@/composables/use-axios-page-loader';
 import { DownloadItemDto, DownloadItemEntity, DownloadItemQueryDto } from '@/api/interfaces/subscribe.interface';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { debounce } from '@/utils/utils';
 import { StatusEnum } from '@/api/enums/status.enum';
-import { mdiPlus, mdiRefresh } from '@mdi/js';
+import { mdiPlus, mdiRefresh, mdiPause, mdiPlay, mdiClose } from '@mdi/js';
 import MultiItemsLoader from '@/components/app/MultiItemsLoader.vue';
 import DownloadItemOverview from '@/components/source/DownloadItemOverview.vue';
 import ToTopContainer from '@/components/app/ToTopContainer.vue';
@@ -251,6 +294,63 @@ const onItemDeleted = (item: DownloadItemEntity) => {
     downloads.value.splice(index, 1);
     downloadsLoader.setTotal(downloadsLoader.total.value - 1);
   }
+};
+
+const selectedIds = ref<string[]>([]);
+const allSelected = computed({
+  get() {
+    return downloads.value.length > 0 && selectedIds.value.length === downloads.value.length;
+  },
+  set(value: boolean) {
+    selectedIds.value = value ? downloads.value.map((item) => item.id) : [];
+  },
+});
+
+const batchPausing = ref(false);
+const batchUnpausing = ref(false);
+const batchCanceling = ref(false);
+
+const toggleSelectAll = () => {
+  allSelected.value = !allSelected.value;
+};
+
+const pauseSelected = async () => {
+  batchPausing.value = true;
+  for (const id of selectedIds.value) {
+    try {
+      const item = await api.Download.pause(id)();
+      onItemUpdated(item);
+    } catch (error: any) {
+      toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
+    }
+  }
+  batchPausing.value = false;
+};
+
+const unpauseSelected = async () => {
+  batchUnpausing.value = true;
+  for (const id of selectedIds.value) {
+    try {
+      const item = await api.Download.unpause(id)();
+      onItemUpdated(item);
+    } catch (error: any) {
+      toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
+    }
+  }
+  batchUnpausing.value = false;
+};
+
+const cancelSelected = async () => {
+  batchCanceling.value = true;
+  for (const id of selectedIds.value) {
+    try {
+      const item = await api.Download.cancel(id)();
+      onItemUpdated(item);
+    } catch (error: any) {
+      toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
+    }
+  }
+  batchCanceling.value = false;
 };
 </script>
 
