@@ -140,7 +140,12 @@ import { useI18n } from 'vue-i18n';
 import { useApiStore } from '@/store/api';
 import { useRoute } from 'vue-router';
 import { useAxiosPageLoader } from '@/composables/use-axios-page-loader';
-import { DownloadItemDto, DownloadItemEntity, DownloadItemQueryDto } from '@/api/interfaces/subscribe.interface';
+import {
+  DownloadItemDto,
+  DownloadItemEntity,
+  DownloadItemQueryDto,
+  BatchIdsDto,
+} from '@/api/interfaces/subscribe.interface';
 import { ref } from 'vue';
 import { debounce } from '@/utils/utils';
 import { StatusEnum } from '@/api/enums/status.enum';
@@ -190,6 +195,7 @@ const downloadsLoader = useAxiosPageLoader(
   { page: 0, size: 20 },
 );
 const { items: downloads } = downloadsLoader;
+const selectedIds = ref<string[]>([]);
 
 const filters = ref<Partial<DownloadItemQueryDto>>({
   keyword: '',
@@ -252,6 +258,58 @@ const onItemDeleted = (item: DownloadItemEntity) => {
     downloadsLoader.setTotal(downloadsLoader.total.value - 1);
   }
 };
+
+const {
+  pending: pausingSelected,
+  request: pauseTasks,
+  onResolved: onTasksPaused,
+  onRejected: onTasksPauseFailed,
+} = useAxiosRequest(async () => {
+  return api.Download.pauseTasks({ ids: selectedIds.value } as BatchIdsDto);
+});
+onTasksPaused((items) => {
+  items.forEach(onItemUpdated);
+  selectedIds.value = [];
+});
+onTasksPauseFailed((error: any) => {
+  toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
+});
+
+const {
+  pending: unpausingSelected,
+  request: unpauseTasks,
+  onResolved: onTasksUnpaused,
+  onRejected: onTasksUnpauseFailed,
+} = useAxiosRequest(async () => {
+  return api.Download.unpauseTasks({ ids: selectedIds.value } as BatchIdsDto);
+});
+onTasksUnpaused((items) => {
+  items.forEach(onItemUpdated);
+  selectedIds.value = [];
+});
+onTasksUnpauseFailed((error: any) => {
+  toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
+});
+
+const {
+  pending: cancelingSelected,
+  request: cancelTasks,
+  onResolved: onTasksCanceled,
+  onRejected: onTasksCancelFailed,
+} = useAxiosRequest(async () => {
+  return api.Download.cancelTasks({ ids: selectedIds.value } as BatchIdsDto);
+});
+onTasksCanceled((items) => {
+  items.forEach(onItemUpdated);
+  selectedIds.value = [];
+});
+onTasksCancelFailed((error: any) => {
+  toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
+});
+
+const pauseSelected = () => pauseTasks();
+const unpauseSelected = () => unpauseTasks();
+const cancelSelected = () => cancelTasks();
 </script>
 
 <style scoped lang="sass"></style>
