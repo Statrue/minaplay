@@ -158,6 +158,7 @@ const zh: MessageSchema = {
     create: '创建下载任务',
     url: '下载链接',
     name: '任务名称（可选）',
+    selected: '已选择{count}项',
   },
   parser: {
     title: '解析器',

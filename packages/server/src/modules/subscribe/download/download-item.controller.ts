@@ -25,6 +25,7 @@ import { isDefined } from 'class-validator';
 import { DownloadService } from './download.service.js';
 import { DownloadItemDto } from './download-item.dto.js';
 import { generateMD5 } from '../../../utils/generate-md5.util.js';
+import { BatchIdsDto } from './batch-ids.dto.js';
 
 @Controller('subscribe/download')
 @UseGuards(AuthorizationGuard)
@@ -194,6 +195,36 @@ export class DownloadItemController {
       await this.downloadService.delete({ id: item.id });
       throw buildException(NotFoundException, ErrorCodeEnum.NOT_FOUND);
     }
+  }
+
+  @Post('batch/pause')
+  @ApiOperation({
+    description: '批量暂停下载任务',
+  })
+  @HttpCode(200)
+  @RequirePermissions(PermissionEnum.ROOT_OP, PermissionEnum.SUBSCRIBE_OP)
+  async batchPauseDownloadTask(@Body() data: BatchIdsDto) {
+    return await this.downloadService.pauseTasks(data.ids);
+  }
+
+  @Post('batch/unpause')
+  @ApiOperation({
+    description: '批量继续下载任务',
+  })
+  @HttpCode(200)
+  @RequirePermissions(PermissionEnum.ROOT_OP, PermissionEnum.SUBSCRIBE_OP)
+  async batchUnpauseDownloadTask(@Body() data: BatchIdsDto) {
+    return await this.downloadService.unpauseTasks(data.ids);
+  }
+
+  @Post('batch/cancel')
+  @ApiOperation({
+    description: '批量取消下载任务',
+  })
+  @HttpCode(200)
+  @RequirePermissions(PermissionEnum.ROOT_OP, PermissionEnum.SUBSCRIBE_OP)
+  async batchCancelDownloadTask(@Body() data: BatchIdsDto) {
+    return await this.downloadService.cancelTasks(data.ids);
   }
 
   @Get()
