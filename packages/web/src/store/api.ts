@@ -17,6 +17,7 @@ import {
   DownloadItemDto,
   DownloadItemEntity,
   DownloadItemQueryDto,
+  BatchIdsDto,
   FeedData,
   ParseLogEntity,
   ParseLogQueryDto,
@@ -213,6 +214,15 @@ export const useApiStore = defineStore('api', () => {
     pause: (id: string) => apiPost<DownloadItemEntity>(`/api/v1/subscribe/download/${id}/pause`),
     unpause: (id: string) => apiPost<DownloadItemEntity>(`/api/v1/subscribe/download/${id}/unpause`),
     cancel: (id: string) => apiPost<DownloadItemEntity>(`/api/v1/subscribe/download/${id}/cancel`),
+    pauseTasks: apiPost<DownloadItemEntity[], BatchIdsDto>(
+      '/api/v1/subscribe/download/batch/pause',
+    ),
+    unpauseTasks: apiPost<DownloadItemEntity[], BatchIdsDto>(
+      '/api/v1/subscribe/download/batch/unpause',
+    ),
+    cancelTasks: apiPost<DownloadItemEntity[], BatchIdsDto>(
+      '/api/v1/subscribe/download/batch/cancel',
+    ),
   };
 
   const Series = {
