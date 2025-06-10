@@ -370,45 +370,7 @@ onTasksCancelFailed((error: any) => {
 const pauseSelected = () => pauseTasks();
 const unpauseSelected = () => unpauseTasks();
 const cancelSelected = () => cancelTasks();
-=======
-const pauseSelected = async () => {
-  batchPausing.value = true;
-  for (const id of selectedIds.value) {
-    try {
-      const item = await api.Download.pause(id)();
-      onItemUpdated(item);
-    } catch (error: any) {
-      toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
-    }
-  }
-  batchPausing.value = false;
-};
 
-const unpauseSelected = async () => {
-  batchUnpausing.value = true;
-  for (const id of selectedIds.value) {
-    try {
-      const item = await api.Download.unpause(id)();
-      onItemUpdated(item);
-    } catch (error: any) {
-      toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
-    }
-  }
-  batchUnpausing.value = false;
-};
-
-const cancelSelected = async () => {
-  batchCanceling.value = true;
-  for (const id of selectedIds.value) {
-    try {
-      const item = await api.Download.cancel(id)();
-      onItemUpdated(item);
-    } catch (error: any) {
-      toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
-    }
-  }
-  batchCanceling.value = false;
-};
 </script>
 
 <style scoped lang="sass"></style>
