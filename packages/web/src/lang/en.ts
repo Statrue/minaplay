@@ -157,6 +157,7 @@ export default {
     create: 'Create Download Task',
     url: 'URL',
     name: 'Task Name(Optional)',
+    selected: '{count} selected',
   },
   parser: {
     title: 'Parser',

@@ -121,15 +121,58 @@
         </v-col>
       </v-row>
       <v-divider class="my-2"></v-divider>
+      <v-row class="py-2" dense>
+        <v-col cols="auto">
+          <v-checkbox-btn :model-value="allSelected" @click="toggleSelectAll()"></v-checkbox-btn>
+        </v-col>
+        <v-col class="d-flex align-center">
+          <span class="text-body-2">
+            {{ selectedIds.length > 0 ? t('download.selected', { count: selectedIds.length }) : t('app.input.unselected') }}
+          </span>
+        </v-col>
+        <v-spacer></v-spacer>
+        <v-col cols="auto" v-if="selectedIds.length > 0">
+          <v-btn
+            class="mr-2"
+            variant="flat"
+            color="warning"
+            :prepend-icon="mdiPause"
+            :loading="batchPausing"
+            @click="pauseSelected()"
+          >
+            {{ t('app.actions.pause') }}
+          </v-btn>
+          <v-btn
+            class="mr-2"
+            variant="flat"
+            color="success"
+            :prepend-icon="mdiPlay"
+            :loading="batchUnpausing"
+            @click="unpauseSelected()"
+          >
+            {{ t('app.actions.unpause') }}
+          </v-btn>
+          <v-btn
+            variant="flat"
+            color="error"
+            :prepend-icon="mdiClose"
+            :loading="batchCanceling"
+            @click="cancelSelected()"
+          >
+            {{ t('app.actions.cancel') }}
+          </v-btn>
+        </v-col>
+      </v-row>
       <multi-items-loader class="px-0 py-3 mt-2" :loader="downloadsLoader" auto>
-        <download-item-overview
-          class="mb-3"
-          v-for="item in downloads"
-          :key="item.id"
-          :item="item"
-          @updated="onItemUpdated"
-          @deleted="onItemDeleted"
-        ></download-item-overview>
+        <div class="d-flex align-start mb-3" v-for="item in downloads" :key="item.id">
+          <v-checkbox-btn class="mr-2" color="primary" v-model="selectedIds" :value="item.id"></v-checkbox-btn>
+          <download-item-overview
+            class="flex-grow-1"
+            :item="item"
+            @updated="onItemUpdated"
+            @deleted="onItemDeleted"
+          ></download-item-overview>
+        </div>
       </multi-items-loader>
     </v-container>
   </component>
@@ -146,10 +189,10 @@ import {
   DownloadItemQueryDto,
   BatchIdsDto,
 } from '@/api/interfaces/subscribe.interface';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { debounce } from '@/utils/utils';
 import { StatusEnum } from '@/api/enums/status.enum';
-import { mdiPlus, mdiRefresh } from '@mdi/js';
+import { mdiPlus, mdiRefresh, mdiPause, mdiPlay, mdiClose } from '@mdi/js';
 import MultiItemsLoader from '@/components/app/MultiItemsLoader.vue';
 import DownloadItemOverview from '@/components/source/DownloadItemOverview.vue';
 import ToTopContainer from '@/components/app/ToTopContainer.vue';
@@ -195,7 +238,6 @@ const downloadsLoader = useAxiosPageLoader(
   { page: 0, size: 20 },
 );
 const { items: downloads } = downloadsLoader;
-const selectedIds = ref<string[]>([]);
 
 const filters = ref<Partial<DownloadItemQueryDto>>({
   keyword: '',
@@ -259,8 +301,22 @@ const onItemDeleted = (item: DownloadItemEntity) => {
   }
 };
 
+const selectedIds = ref<string[]>([]);
+const allSelected = computed({
+  get() {
+    return downloads.value.length > 0 && selectedIds.value.length === downloads.value.length;
+  },
+  set(value: boolean) {
+    selectedIds.value = value ? downloads.value.map((item) => item.id) : [];
+  },
+});
+
+const toggleSelectAll = () => {
+  allSelected.value = !allSelected.value;
+};
+
 const {
-  pending: pausingSelected,
+  pending: batchPausing,
   request: pauseTasks,
   onResolved: onTasksPaused,
   onRejected: onTasksPauseFailed,
@@ -276,7 +332,7 @@ onTasksPauseFailed((error: any) => {
 });
 
 const {
-  pending: unpausingSelected,
+  pending: batchUnpausing,
   request: unpauseTasks,
   onResolved: onTasksUnpaused,
   onRejected: onTasksUnpauseFailed,
@@ -292,7 +348,7 @@ onTasksUnpauseFailed((error: any) => {
 });
 
 const {
-  pending: cancelingSelected,
+  pending: batchCanceling,
   request: cancelTasks,
   onResolved: onTasksCanceled,
   onRejected: onTasksCancelFailed,

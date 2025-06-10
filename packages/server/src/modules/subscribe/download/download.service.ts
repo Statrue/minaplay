@@ -306,4 +306,64 @@ export class DownloadService implements OnModuleInit {
 
     return items.length > 0;
   }
+
+  async pauseTasks(ids: string[]) {
+    const items = await this.downloadItemRepository.find({
+      where: {
+        id: In(ids),
+        status: StatusEnum.PENDING,
+      },
+    });
+    const result: DownloadItem[] = [];
+    for (const item of items) {
+      const task = await this.getTask(item.id);
+      if (task) {
+        await task.pause();
+        result.push(await this.findOneBy({ id: item.id }));
+      } else {
+        await this.downloadItemRepository.delete({ id: item.id });
+      }
+    }
+    return result;
+  }
+
+  async unpauseTasks(ids: string[]) {
+    const items = await this.downloadItemRepository.find({
+      where: {
+        id: In(ids),
+        status: StatusEnum.PAUSED,
+      },
+    });
+    const result: DownloadItem[] = [];
+    for (const item of items) {
+      const task = await this.getTask(item.id);
+      if (task) {
+        await task.unpause();
+        result.push(await this.findOneBy({ id: item.id }));
+      } else {
+        await this.downloadItemRepository.delete({ id: item.id });
+      }
+    }
+    return result;
+  }
+
+  async cancelTasks(ids: string[]) {
+    const items = await this.downloadItemRepository.find({
+      where: {
+        id: In(ids),
+        status: In([StatusEnum.PENDING, StatusEnum.PAUSED]),
+      },
+    });
+    const result: DownloadItem[] = [];
+    for (const item of items) {
+      const task = await this.getTask(item.id);
+      if (task) {
+        await task.remove();
+        result.push(await this.findOneBy({ id: item.id }));
+      } else {
+        await this.downloadItemRepository.delete({ id: item.id });
+      }
+    }
+    return result;
+  }
 }
