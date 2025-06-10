@@ -306,9 +306,6 @@ const allSelected = computed({
   },
 });
 
-const batchPausing = ref(false);
-const batchUnpausing = ref(false);
-const batchCanceling = ref(false);
 
 const toggleSelectAll = () => {
   allSelected.value = !allSelected.value;
