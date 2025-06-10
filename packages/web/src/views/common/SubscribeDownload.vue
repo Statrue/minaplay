@@ -183,7 +183,12 @@ import { useI18n } from 'vue-i18n';
 import { useApiStore } from '@/store/api';
 import { useRoute } from 'vue-router';
 import { useAxiosPageLoader } from '@/composables/use-axios-page-loader';
-import { DownloadItemDto, DownloadItemEntity, DownloadItemQueryDto } from '@/api/interfaces/subscribe.interface';
+import {
+  DownloadItemDto,
+  DownloadItemEntity,
+  DownloadItemQueryDto,
+  BatchIdsDto,
+} from '@/api/interfaces/subscribe.interface';
 import { ref, computed } from 'vue';
 import { debounce } from '@/utils/utils';
 import { StatusEnum } from '@/api/enums/status.enum';
@@ -314,6 +319,58 @@ const toggleSelectAll = () => {
   allSelected.value = !allSelected.value;
 };
 
+const {
+  pending: batchPausing,
+  request: pauseTasks,
+  onResolved: onTasksPaused,
+  onRejected: onTasksPauseFailed,
+} = useAxiosRequest(async () => {
+  return api.Download.pauseTasks({ ids: selectedIds.value } as BatchIdsDto);
+});
+onTasksPaused((items) => {
+  items.forEach(onItemUpdated);
+  selectedIds.value = [];
+});
+onTasksPauseFailed((error: any) => {
+  toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
+});
+
+const {
+  pending: batchUnpausing,
+  request: unpauseTasks,
+  onResolved: onTasksUnpaused,
+  onRejected: onTasksUnpauseFailed,
+} = useAxiosRequest(async () => {
+  return api.Download.unpauseTasks({ ids: selectedIds.value } as BatchIdsDto);
+});
+onTasksUnpaused((items) => {
+  items.forEach(onItemUpdated);
+  selectedIds.value = [];
+});
+onTasksUnpauseFailed((error: any) => {
+  toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
+});
+
+const {
+  pending: batchCanceling,
+  request: cancelTasks,
+  onResolved: onTasksCanceled,
+  onRejected: onTasksCancelFailed,
+} = useAxiosRequest(async () => {
+  return api.Download.cancelTasks({ ids: selectedIds.value } as BatchIdsDto);
+});
+onTasksCanceled((items) => {
+  items.forEach(onItemUpdated);
+  selectedIds.value = [];
+});
+onTasksCancelFailed((error: any) => {
+  toast.toastError(t(`error.${error.response?.data?.code ?? 'other'}`));
+});
+
+const pauseSelected = () => pauseTasks();
+const unpauseSelected = () => unpauseTasks();
+const cancelSelected = () => cancelTasks();
+=======
 const pauseSelected = async () => {
   batchPausing.value = true;
   for (const id of selectedIds.value) {

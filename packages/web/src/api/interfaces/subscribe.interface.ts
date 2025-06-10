@@ -149,3 +149,7 @@ export interface FeedData {
   published?: Date;
   entries?: Array<FeedEntry>;
 }
+
+export interface BatchIdsDto {
+  ids: string[];
+}
