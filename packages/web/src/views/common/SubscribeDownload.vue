@@ -183,12 +183,7 @@ import { useI18n } from 'vue-i18n';
 import { useApiStore } from '@/store/api';
 import { useRoute } from 'vue-router';
 import { useAxiosPageLoader } from '@/composables/use-axios-page-loader';
-import {
-  DownloadItemDto,
-  DownloadItemEntity,
-  DownloadItemQueryDto,
-  BatchIdsDto,
-} from '@/api/interfaces/subscribe.interface';
+import { DownloadItemDto, DownloadItemEntity, DownloadItemQueryDto, BatchIdsDto } from '@/api/interfaces/subscribe.interface';
 import { ref, computed } from 'vue';
 import { debounce } from '@/utils/utils';
 import { StatusEnum } from '@/api/enums/status.enum';
